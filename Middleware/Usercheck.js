@@ -7,11 +7,11 @@ const authenticate=(req, res, next)=> {
     if(req.headers.authorization){
         jwt.verify(req.headers.authorization,process.env.JWT_SECRET,function(error,decoded){
             if(error){
-                res.status(500).json({
+                res.status(401).json({
                     message: "Unauthorized"
                 })
             }else{
-                console.log(decoded)
+                
                 req.userid = decoded.id;
             next()
             }

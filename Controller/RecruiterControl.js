@@ -183,6 +183,8 @@ const GoogleLoginbyrecruiter = async (req, res) => {
 };
 
 const postJob = async (req, res) => {
+  console.log(req.body);
+  req.body.data.recruiter_id=req.userid ;
   try {
     // connect the database
   
@@ -195,7 +197,7 @@ const postJob = async (req, res) => {
 
     //select the collection and perform the action
 
-    let data = await db.collection("jobs").insertOne(req.body);
+    let data = await db.collection("jobs").insertOne(req.body.data);
 
     //close the connection
     await client.close();
@@ -211,11 +213,36 @@ const postJob = async (req, res) => {
     });
   }
 };
+const JobByrecruiter = async (req, res) => {
+  try {
+    //conect the database
+    let client = await mongoClient.connect(URL);
 
+    //select the db
+    let db = client.db("job");
+
+    //select connect action and perform action
+    let data = await db
+      .collection("jobs")
+      .find({_id : Mongodb.ObjectId(req.userid)})
+      .toArray();
+
+    //close the connection
+    client.close();
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "something went wrong",
+    });
+  }
+};
 module.exports = {
   recruiterRegister,
   GoogleRegisterByRecruiter,
   recruiterLogin,
   GoogleLoginbyrecruiter,
   postJob,
+  JobByrecruiter,
 };
