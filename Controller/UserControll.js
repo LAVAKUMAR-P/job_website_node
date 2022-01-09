@@ -12,7 +12,7 @@ console.log(url);
 const Googleclient = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
 const UserRegister=async(req,res)=>{
-    req.body.user = true;
+  req.body.recruiter = false;
   try {
     //connect db
     let client = await mongoClient.connect(url);
@@ -67,7 +67,7 @@ const GoogleRegisterByUser = async (req, res) => {
   
   if (!check) {
     //post db
-    let data = await db.collection("users").insertOne({firstName:given_name,lastName:family_name,email,picture,address:"Kindly add your address by using Edit",admin:false});
+    let data = await db.collection("users").insertOne({firstName:given_name,lastName:family_name,email,picture,recruiter :false});
     //close db
     await client.close();
     res.json({

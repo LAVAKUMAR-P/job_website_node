@@ -1,5 +1,5 @@
 const express=require('express');
-const { recruiterRegister, GoogleRegisterByRecruiter, recruiterLogin, GoogleLoginbyrecruiter } = require('../Controller/RecruiterControl');
+const { recruiterRegister, GoogleRegisterByRecruiter, recruiterLogin, GoogleLoginbyrecruiter, postJob } = require('../Controller/RecruiterControl');
 const { UserRegister, GoogleRegisterByUser, UserLogin, GoogleLoginbyusers } = require('../Controller/UserControll');
 const authenticate = require('../Middleware/Usercheck');
 
@@ -12,5 +12,6 @@ router.post("/userLogin",UserLogin);
 router.post("/recruiterLogin",recruiterLogin);
 router.post("/userLoginbygoogle",GoogleLoginbyusers);
 router.post("/recruiterLoginbygoogle", GoogleLoginbyrecruiter);
+router.post("/createjob",[authenticate],postJob);
 
 module.exports=router;

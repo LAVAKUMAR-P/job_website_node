@@ -1,23 +1,25 @@
-const Mongodb=require('mongodb');
-const mongoClient=Mongodb.MongoClient;
-const env=require('dotenv');
-const bcrypt=require('bcryptjs');
-const { OAuth2Client } = require('google-auth-library');
-const jwt=require('jsonwebtoken');
+const Mongodb = require("mongodb");
+const mongoClient = Mongodb.MongoClient;
+const env = require("dotenv");
+const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
+const jwt = require("jsonwebtoken");
 env.config();
-const url=process.env.DB;
+const url = process.env.DB;
 console.log(url);
 
 const Googleclient = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
-const recruiterRegister=async(req,res)=>{
-    req.body.user = true;
+const recruiterRegister = async (req, res) => {
+  req.body.recruiter = true;
   try {
     //connect db
     let client = await mongoClient.connect(url);
     //select db
     let db = client.db("job");
-    let check = await db.collection("recruiter").findOne({ email: req.body.email });
+    let check = await db
+      .collection("recruiter")
+      .findOne({ email: req.body.email });
 
     if (!check) {
       //Hash password
@@ -44,140 +46,176 @@ const recruiterRegister=async(req,res)=>{
       message: "Registeration failed",
     });
   }
-  }
+};
 
 //Register by google
 
 const GoogleRegisterByRecruiter = async (req, res) => {
-    // console.log("login");
-    console.log(req);
-    try {
-        const { token } = req.body;
-      const ticket = await Googleclient.verifyIdToken({
-        idToken: token,
-        audience: process.env.CLIENT_ID,
-      });
-     console.log(ticket);
-      const { given_name,family_name, email, picture,email_verified } = ticket.getPayload();
-      if(email_verified){
-    //connect db
-    let client = await mongoClient.connect(url);
-    //select db
-    let db = client.db("job");
-    let check = await db.collection("recruiter").findOne({ email: email });
-    
-    if (!check) {
-      //post db
-      let data = await db.collection("recruiter").insertOne({firstName:given_name,lastName:family_name,email,picture,address:"Kindly add your address by using Edit",admin:false});
-      //close db
-      await client.close();
-      res.json({
-        message: "user registered",
-      });
+  
+  try {
+    const { token } = req.body;
+    const ticket = await Googleclient.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID,
+    });
+    console.log(ticket);
+    const { given_name, family_name, email, picture, email_verified } =ticket.getPayload();
+    if (email_verified) {
+      //connect db
+      let client = await mongoClient.connect(url);
+      //select db
+      let db = client.db("job");
+      let check = await db.collection("recruiter").findOne({ email: email });
+
+      if (!check) {
+        //post db
+        let data = await db
+          .collection("recruiter")
+          .insertOne({
+            firstName: given_name,
+            lastName: family_name,
+            email,
+            picture,
+            recruiter : true,
+          });
+        //close db
+        await client.close();
+        res.json({
+          message: "user registered",
+        });
+      } else {
+        // console.log("mail id already used");
+        res.status(409).json({
+          message: "Email already Registered",
+        });
+      }
     } else {
-      // console.log("mail id already used");
-      res.status(409).json({
-        message: "Email already Registered",
+      res.status(404).json({
+        message: "Something went wrong",
       });
     }
-      }
-      else{
-        res.status(404).json({
-          message: "Something went wrong",
-        });
-      }
-    
-      } catch (error) {
-          console.log("--------------------------------------");
-        console.log(error);
-        res.status(404).json({
-          message: "Internal server error",
-        });
-      }
-  };
+  } catch (error) {
+    console.log("--------------------------------------");
+    console.log(error);
+    res.status(404).json({
+      message: "Internal server error",
+    });
+  }
+};
 
-  //recruiter login
-  const recruiterLogin = async (req, res) => {
-   
-    try {
-      let client = await mongoClient.connect(url);
-      let db = client.db("job");
-      // console.log(req.body.email);
-      let user = await db.collection("recruiter").findOne({ email: req.body.email });
-  
-      if (user) {
-        let matchPassword = bcrypt.compareSync(req.body.password, user.password);
-  
-        if (matchPassword) {
-          let token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-          // console.log(user.Admin);
-          res.json({
-            message: true,
-            token,
-            unconditional: user.admin,
-          });
-        } else {
-          res.status(401).json({
-            message: "Username/Password is incorrect",
-          });
-        }
+//recruiter login
+const recruiterLogin = async (req, res) => {
+  try {
+    let client = await mongoClient.connect(url);
+    let db = client.db("job");
+    // console.log(req.body.email);
+    let user = await db
+      .collection("recruiter")
+      .findOne({ email: req.body.email });
+
+    if (user) {
+      let matchPassword = bcrypt.compareSync(req.body.password, user.password);
+
+      if (matchPassword) {
+        let token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        // console.log(user.Admin);
+        res.json({
+          message: true,
+          token,
+          unconditional: user.admin,
+        });
       } else {
         res.status(401).json({
           message: "Username/Password is incorrect",
         });
       }
-    } catch (error) {
-      console.log(error);
-      res.status(404).json({
-        message: "Internal server error",
+    } else {
+      res.status(401).json({
+        message: "Username/Password is incorrect",
       });
     }
-  };
-
-
-  
-  
-  
-  
-  /*Google Login */
-  
-  const GoogleLoginbyrecruiter=async(req,res)=>{
-    try {
-        const { token } = req.body;
-        const ticket = await Googleclient.verifyIdToken({
-          idToken: token,
-          audience: process.env.CLIENT_ID,
-        });
-        // console.log("--------------------------------------");
-        // console.log(ticket);
-        // console.log("---------------------------------------");
-        const { email,email_verified } = ticket.getPayload();
-        
-        if(email_verified){
-          let client = await mongoClient.connect(url);
-        let db = client.db("job");
-        // console.log(req.body.email);
-        let user = await db.collection("recruiter").findOne({ email: email });
-    
-        let jwttoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-        // console.log(user.Admin);
-        res.json({
-          message: true,
-          token:jwttoken,
-          unconditional: user.admin,
-        });
-        }else{
-          res.status(404).json({
-            message: "Username/Password is incorrect",
-          });
-        }
-      } catch (error) {
-        console.log(error);
-        res.status(404).json({
-          message: "Internal server error",
-        });
-      }
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      message: "Internal server error",
+    });
   }
+};
 
-  module.exports={recruiterRegister,GoogleRegisterByRecruiter,recruiterLogin,GoogleLoginbyrecruiter}
+/*Google Login */
 
+const GoogleLoginbyrecruiter = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const ticket = await Googleclient.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID,
+    });
+    // console.log("--------------------------------------");
+    // console.log(ticket);
+    // console.log("---------------------------------------");
+    const { email, email_verified } = ticket.getPayload();
+
+    if (email_verified) {
+      let client = await mongoClient.connect(url);
+      let db = client.db("job");
+      // console.log(req.body.email);
+      let user = await db.collection("recruiter").findOne({ email: email });
+
+      let jwttoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      // console.log(user.Admin);
+      res.json({
+        message: true,
+        token: jwttoken,
+        unconditional: user.admin,
+      });
+    } else {
+      res.status(404).json({
+        message: "Username/Password is incorrect",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const postJob = async (req, res) => {
+  try {
+    // connect the database
+  
+    let client = await mongoClient.connect(url);
+
+
+
+    //select the db
+    let db = client.db("job");
+
+    //select the collection and perform the action
+
+    let data = await db.collection("jobs").insertOne(req.body);
+
+    //close the connection
+    await client.close();
+
+    res.status(200).json({
+      message: "job created",
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      message: "something went wrong",
+    });
+  }
+};
+
+module.exports = {
+  recruiterRegister,
+  GoogleRegisterByRecruiter,
+  recruiterLogin,
+  GoogleLoginbyrecruiter,
+  postJob,
+};
