@@ -6,7 +6,7 @@ const url=process.env.DB;
 
 
 
- const Recruitercheck = async (req,res,next)=>{
+ const UsersCheck = async (req,res,next)=>{
      console.log(req.userid);
     try {
         // connect the database
@@ -14,12 +14,12 @@ const url=process.env.DB;
         let client =await mongoClient.connect(url);
         let db= client.db("job");
         
-        let check=await db.collection('recruiter').findOne({_id: mongodb.ObjectId(req.userid)});
+        let check=await db.collection('users').findOne({_id: mongodb.ObjectId(req.userid)});
     
         let value=check.recruiter
 
 
-        if(value){
+        if(!value){
             
          await client.close();
             next();
@@ -36,4 +36,4 @@ const url=process.env.DB;
       }
 }
 
-module.exports=Recruitercheck;
+module.exports=UsersCheck;

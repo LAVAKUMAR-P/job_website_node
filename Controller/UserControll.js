@@ -173,5 +173,65 @@ const UserLogin = async (req, res) => {
     }
   }
 
-  module.exports={UserRegister,GoogleRegisterByUser,UserLogin,GoogleLoginbyusers}
+  //all jobs for user
+
+  const Jobsforuser = async (req, res) => {
+    try {
+      //conect the database
+      let client = await mongoClient.connect(url);
+  
+      //select the db
+      let db = client.db("job");
+  
+      //select connect action and perform action
+      let data = await db
+        .collection("jobs")
+        .find()
+        .toArray();
+  
+      //close the connection
+      client.close();
+  
+      res.status(200).json(data);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: "something went wrong",
+      });
+    }
+  };
+
+  const ApplyJob = async (req, res) => {
+    console.log(req.body);
+    req.body.data.recruiter_id=req.userid ;
+    try {
+      // connect the database
+    
+      let client = await mongoClient.connect(url);
+  
+  
+  
+      //select the db
+      let db = client.db("job");
+  
+      //select the collection and perform the action
+  
+      let data = await db.collection("apply").insertOne(req.body.data);
+  
+      //close the connection
+      await client.close();
+  
+      res.status(200).json({
+        message: "job applyed",
+      });
+  
+    } catch (error) {
+      console.log(error);
+      res.status(404).json({
+        message: "something went wrong",
+      });
+    }
+  };
+
+  module.exports={UserRegister,GoogleRegisterByUser,UserLogin,GoogleLoginbyusers,Jobsforuser,ApplyJob}
 

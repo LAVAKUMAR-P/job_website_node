@@ -216,7 +216,7 @@ const postJob = async (req, res) => {
 const JobByrecruiter = async (req, res) => {
   try {
     //conect the database
-    let client = await mongoClient.connect(URL);
+    let client = await mongoClient.connect(url);
 
     //select the db
     let db = client.db("job");
@@ -224,7 +224,7 @@ const JobByrecruiter = async (req, res) => {
     //select connect action and perform action
     let data = await db
       .collection("jobs")
-      .find({_id : Mongodb.ObjectId(req.userid)})
+      .find({recruiter_id : req.userid })
       .toArray();
 
     //close the connection
