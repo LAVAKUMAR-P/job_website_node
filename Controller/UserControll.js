@@ -148,7 +148,7 @@ const UserLogin = async (req, res) => {
       const { email,email_verified } = ticket.getPayload();
       
       if(email_verified){
-        let client = await mongoClient.connect(URL);
+        let client = await mongoClient.connect(url);
       let db = client.db("job");
       // console.log(req.body.email);
       let user = await db.collection("users").findOne({ email: email });

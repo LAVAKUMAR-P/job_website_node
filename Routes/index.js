@@ -11,6 +11,6 @@ router.post("/recruiterRegisterbygoogle",GoogleRegisterByRecruiter);
 router.post("/userLogin",UserLogin);
 router.post("/recruiterLogin",recruiterLogin);
 router.post("/userLoginbygoogle",GoogleLoginbyusers);
-router.post("/recruiterLoginbygoogle",GoogleLoginbyrecruiter);
+router.post("/recruiterLoginbygoogle", GoogleLoginbyrecruiter);
 
 module.exports=router;

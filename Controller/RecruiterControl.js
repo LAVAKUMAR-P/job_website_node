@@ -50,48 +50,50 @@ const recruiterRegister=async(req,res)=>{
 
 const GoogleRegisterByRecruiter = async (req, res) => {
     // console.log("login");
+    console.log(req);
     try {
-      const { token } = req.body;
+        const { token } = req.body;
       const ticket = await Googleclient.verifyIdToken({
-      idToken: token,
-      audience: process.env.CLIENT_ID,
-    });
-  
-const { given_name,family_name, email, picture,email_verified } = ticket.getPayload();
-if(email_verified){
-  //connect db
-  let client = await mongoClient.connect(url);
-  //select db
-  let db = client.db("job");
-  let check = await db.collection("recruiter").findOne({ email: email });
-  
-  if (!check) {
-    //post db
-    let data = await db.collection("recruiter").insertOne({firstName:given_name,lastName:family_name,email,picture,address:"Kindly add your address by using Edit",admin:false});
-    //close db
-    await client.close();
-    res.json({
-      message: "user registered",
-    });
-  } else {
-    // console.log("mail id already used");
-    res.status(409).json({
-      message: "Email already Registered",
-    });
-  }
-    }
-    else{
-      res.status(404).json({
-        message: "Something went wrong",
+        idToken: token,
+        audience: process.env.CLIENT_ID,
+      });
+     console.log(ticket);
+      const { given_name,family_name, email, picture,email_verified } = ticket.getPayload();
+      if(email_verified){
+    //connect db
+    let client = await mongoClient.connect(url);
+    //select db
+    let db = client.db("job");
+    let check = await db.collection("recruiter").findOne({ email: email });
+    
+    if (!check) {
+      //post db
+      let data = await db.collection("recruiter").insertOne({firstName:given_name,lastName:family_name,email,picture,address:"Kindly add your address by using Edit",admin:false});
+      //close db
+      await client.close();
+      res.json({
+        message: "user registered",
+      });
+    } else {
+      // console.log("mail id already used");
+      res.status(409).json({
+        message: "Email already Registered",
       });
     }
-  
-    } catch (error) {
-      console.log(error);
-      res.status(404).json({
-        message: "Internal server error",
-      });
-    }
+      }
+      else{
+        res.status(404).json({
+          message: "Something went wrong",
+        });
+      }
+    
+      } catch (error) {
+          console.log("--------------------------------------");
+        console.log(error);
+        res.status(404).json({
+          message: "Internal server error",
+        });
+      }
   };
 
   //recruiter login
@@ -141,40 +143,40 @@ if(email_verified){
   
   const GoogleLoginbyrecruiter=async(req,res)=>{
     try {
-      const { token } = req.body;
-      const ticket = await Googleclient.verifyIdToken({
-        idToken: token,
-        audience: process.env.CLIENT_ID,
-      });
-      // console.log("--------------------------------------");
-      // console.log(ticket);
-      // console.log("---------------------------------------");
-      const { email,email_verified } = ticket.getPayload();
-      
-      if(email_verified){
-        let client = await mongoClient.connect(URL);
-      let db = client.db("job");
-      // console.log(req.body.email);
-      let user = await db.collection("recruiter").findOne({ email: email });
-  
-      let jwttoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      // console.log(user.Admin);
-      res.json({
-        message: true,
-        token:jwttoken,
-        unconditional: user.admin,
-      });
-      }else{
+        const { token } = req.body;
+        const ticket = await Googleclient.verifyIdToken({
+          idToken: token,
+          audience: process.env.CLIENT_ID,
+        });
+        // console.log("--------------------------------------");
+        // console.log(ticket);
+        // console.log("---------------------------------------");
+        const { email,email_verified } = ticket.getPayload();
+        
+        if(email_verified){
+          let client = await mongoClient.connect(url);
+        let db = client.db("job");
+        // console.log(req.body.email);
+        let user = await db.collection("recruiter").findOne({ email: email });
+    
+        let jwttoken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        // console.log(user.Admin);
+        res.json({
+          message: true,
+          token:jwttoken,
+          unconditional: user.admin,
+        });
+        }else{
+          res.status(404).json({
+            message: "Username/Password is incorrect",
+          });
+        }
+      } catch (error) {
+        console.log(error);
         res.status(404).json({
-          message: "Username/Password is incorrect",
+          message: "Internal server error",
         });
       }
-    } catch (error) {
-      console.log(error);
-      res.status(404).json({
-        message: "Internal server error",
-      });
-    }
   }
 
   module.exports={recruiterRegister,GoogleRegisterByRecruiter,recruiterLogin,GoogleLoginbyrecruiter}
