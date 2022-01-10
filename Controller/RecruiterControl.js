@@ -4,6 +4,9 @@ const env = require("dotenv");
 const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
+const {sendEmail} = require("../Utils/Email");
+const crypto=require('crypto');
+
 env.config();
 const url = process.env.DB;
 console.log(url);
@@ -180,6 +183,103 @@ const GoogleLoginbyrecruiter = async (req, res) => {
   }
 };
 
+
+//forget password
+const recruiterForgetpassword = async (req, res) => {
+ 
+  try {
+    let client = await mongoClient.connect(url);
+    let db = client.db("job");
+    // console.log(req.body.email);
+    let user = await db.collection("recruiter").findOne({ email: req.body.email });
+      if (!user)
+          return res.status(400).send("user with given email doesn't exist");
+         
+            let token = await db.collection("token").find({ email: req.body.email }).toArray();
+          
+      if (token.length===0) {
+        // console.log("if runned");
+        let index=await db.collection("token").createIndex( { "createdAt": 1 }, { expireAfterSeconds: 300 } )
+        let token = await db.collection("token").insertOne({
+        "createdAt": new Date(),
+        userId: user._id,
+        token: crypto.randomBytes(32).toString("hex"),
+        email: req.body.email
+        });
+        token = await db.collection("token").find({ email: req.body.email }).toArray();
+        // console.log(token);
+        const link = `${process.env.BASE_URL}/resetpassword/${user._id}/${token[0].token}`;
+        await sendEmail(user.email, "Password reset",`your rest password link : ${link}` );
+      //  console.log(link);
+       await client.close();
+      res.status(200).send("password reset link sent to your email account"); 
+      }
+     else{
+      res.status(404).json({
+        message: "Internal server error",
+      });
+      await client.close();
+     }
+
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      message: "Internal server error",
+    });
+    await client.close();
+  }
+};
+
+/*Reset password */
+ const recruiterResetpassword = async (req, res) => {
+ 
+  try {
+    let client = await mongoClient.connect(url);
+    let db = client.db("job");
+    // console.log(req.body.email);
+    let user = await db.collection("recruiter").findOne({_id:Mongodb.ObjectId(req.params.userId)});
+      if (!user)
+          return res.status(400).send("invalid link or expired");
+         
+            let token = await db.collection("token").find({   userId: user._id,
+              token: req.params.token,
+            }).toArray();
+            // console.log(token);
+          
+      if (token.length===1) {
+
+        let salt = bcrypt.genSaltSync(10);
+       let hash = bcrypt.hashSync(req.body.password, salt);
+       req.body.password = hash;
+       let data = await db.collection("recruiter").findOneAndUpdate({_id:Mongodb.ObjectId(req.params.userId)},{$set:{password:req.body.password}})
+        let Delete=await db.collection("token").findOneAndDelete({   userId: user._id,
+          token: req.params.token,
+        })
+
+        await client.close();
+        return res.status(200).send("Reset sucessfull");
+      }
+     else if(token.length===0){
+      await client.close();
+      return res.status(406).send("Invalid link or expired");
+     }
+     else{
+      res.status(404).json({
+        message: "Internal server error",
+      });
+      await client.close();
+     }
+
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      message: "Internal server error",
+    });
+    await client.close();
+  }
+};
+
+
 const postJob = async (req, res) => {
   console.log(req.body);
   req.body.data.recruiter_id = req.userid;
@@ -291,4 +391,6 @@ module.exports = {
   postJob,
   JobByrecruiter,
   AppliedToPreviousJobs,
+  recruiterResetpassword,
+  recruiterForgetpassword,
 };
