@@ -51,7 +51,6 @@ const recruiterRegister = async (req, res) => {
 //Register by google
 
 const GoogleRegisterByRecruiter = async (req, res) => {
-  
   try {
     const { token } = req.body;
     const ticket = await Googleclient.verifyIdToken({
@@ -59,7 +58,8 @@ const GoogleRegisterByRecruiter = async (req, res) => {
       audience: process.env.CLIENT_ID,
     });
     console.log(ticket);
-    const { given_name, family_name, email, picture, email_verified } =ticket.getPayload();
+    const { given_name, family_name, email, picture, email_verified } =
+      ticket.getPayload();
     if (email_verified) {
       //connect db
       let client = await mongoClient.connect(url);
@@ -69,15 +69,13 @@ const GoogleRegisterByRecruiter = async (req, res) => {
 
       if (!check) {
         //post db
-        let data = await db
-          .collection("recruiter")
-          .insertOne({
-            firstName: given_name,
-            lastName: family_name,
-            email,
-            picture,
-            recruiter : true,
-          });
+        let data = await db.collection("recruiter").insertOne({
+          firstName: given_name,
+          lastName: family_name,
+          email,
+          picture,
+          recruiter: true,
+        });
         //close db
         await client.close();
         res.json({
@@ -184,13 +182,11 @@ const GoogleLoginbyrecruiter = async (req, res) => {
 
 const postJob = async (req, res) => {
   console.log(req.body);
-  req.body.data.recruiter_id=req.userid ;
+  req.body.data.recruiter_id = req.userid;
   try {
     // connect the database
-  
+
     let client = await mongoClient.connect(url);
-
-
 
     //select the db
     let db = client.db("job");
@@ -205,7 +201,6 @@ const postJob = async (req, res) => {
     res.status(200).json({
       message: "job created",
     });
-
   } catch (error) {
     console.log(error);
     res.status(404).json({
@@ -224,7 +219,7 @@ const JobByrecruiter = async (req, res) => {
     //select connect action and perform action
     let data = await db
       .collection("jobs")
-      .find({recruiter_id : req.userid })
+      .find({ recruiter_id: req.userid })
       .toArray();
 
     //close the connection
@@ -239,8 +234,7 @@ const JobByrecruiter = async (req, res) => {
   }
 };
 
-const AppliedToPreviousJobs=async (req, res) => {
-  
+const AppliedToPreviousJobs = async (req, res) => {
   try {
     //conect the database
     let client = await mongoClient.connect(url);
@@ -251,44 +245,36 @@ const AppliedToPreviousJobs=async (req, res) => {
     //select connect action and perform action
     let apply = await db
       .collection("apply")
-      .find({recruiter_id : req.userid })
+      .find({ recruiter_id: req.userid })
       .toArray();
-    
-    let CurrentJob=await db.collection("apply").find({job_id:req.headers.current_id}).toArray();
-  
-    
-    const Privious=[]
-    if(CurrentJob.length>0){
-      for await (let data of apply ){
-     
-        if(data.job_id != req.headers.current_id  ){
-       
-          let index=0
-          for await (let user of CurrentJob ){
-            
-            
-          
-             if(user.user_id ==data.user_id){
 
+    let CurrentJob = await db
+      .collection("apply")
+      .find({ job_id: req.headers.current_id })
+      .toArray();
+
+    const Privious = [];
+    if (CurrentJob.length > 0) {
+      for await (let data of apply) {
+        if (data.job_id != req.headers.current_id) {
+          let index = 0;
+          for await (let user of CurrentJob) {
+            if (user.user_id == data.user_id) {
               Privious.push(user);
-              CurrentJob.splice(index,1);
-             }
-             index++
+              CurrentJob.splice(index, 1);
+            }
+            index++;
           }
         }
       }
     }
-     console.log("over all result___________________________________");
+    console.log("over all result___________________________________");
     console.log(Privious);
 
-    res.status(200).json(
-      Privious
-    );
+    res.status(200).json(Privious);
 
     //close the connection
     client.close();
-
-  
   } catch (error) {
     console.log(error);
     res.status(500).json({

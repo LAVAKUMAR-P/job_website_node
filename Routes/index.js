@@ -7,6 +7,7 @@ const UsersCheck = require('../Middleware/UsersCheck');
 
 
 const router=express.Router()
+
 router.post("/userregister",UserRegister);
 router.post("/recruiterRegister",recruiterRegister);
 router.post("/userregisterbygoogle",GoogleRegisterByUser);
