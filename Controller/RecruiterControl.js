@@ -238,6 +238,65 @@ const JobByrecruiter = async (req, res) => {
     });
   }
 };
+
+const AppliedToPreviousJobs=async (req, res) => {
+  
+  try {
+    //conect the database
+    let client = await mongoClient.connect(url);
+
+    //select the db
+    let db = client.db("job");
+
+    //select connect action and perform action
+    let apply = await db
+      .collection("apply")
+      .find({recruiter_id : req.userid })
+      .toArray();
+    
+    let CurrentJob=await db.collection("apply").find({job_id:req.headers.current_id}).toArray();
+  
+    
+    const Privious=[]
+    if(CurrentJob.length>0){
+      for await (let data of apply ){
+     
+        if(data.job_id != req.headers.current_id  ){
+       
+          let index=0
+          for await (let user of CurrentJob ){
+            
+            
+          
+             if(user.user_id ==data.user_id){
+
+              Privious.push(user);
+              CurrentJob.splice(index,1);
+             }
+             index++
+          }
+        }
+      }
+    }
+     console.log("over all result___________________________________");
+    console.log(Privious);
+
+    res.status(200).json(
+      Privious
+    );
+
+    //close the connection
+    client.close();
+
+  
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "something went wrong",
+    });
+  }
+};
+
 module.exports = {
   recruiterRegister,
   GoogleRegisterByRecruiter,
@@ -245,4 +304,5 @@ module.exports = {
   GoogleLoginbyrecruiter,
   postJob,
   JobByrecruiter,
+  AppliedToPreviousJobs,
 };
